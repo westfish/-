@@ -1,4 +1,4 @@
-﻿#1
+﻿#1.2
 # 测试因子的有效性，如胜率、信息比率
 # 每期都计算一次，从而因子及打分权重可以动态调整
 import numpy as np
@@ -12,8 +12,8 @@ import pandas as pd
 #一行间距或无间距表示区分各步骤具体实现的小步骤
 def initialize(account):
     # 通过过滤形成待选股票池
-    get_iwencai('非停牌，非涨停，非新股,非次新股')
-
+    #get_iwencai('非新股,非次新股')
+    
     # 调仓周期
     account.pp = 30
 
@@ -34,7 +34,7 @@ def initialize(account):
     # account.mfactors={'valuation_pe':[0,-20],'valuation_pb':[0,-1]}
     # 设置因子的权重，-1.0表示因子越小越好,1.0表示因子越大越好
     account.mfactors = {'valuation_pe_ttm':1.0,
-    'valuation_pb': -1.0,'valuation_history_peg':-1.0,'profit_roe_ths':1.0,
+    'valuation_pb': -1.0,'valuation_history_peg':1.0,'profit_roe_ths':1.0,
     'profit_net_profit_margin_on_sales':1.0,'valuation_current_market_cap':1.0,'profit_roa':1.0,'growth_opt_profit_grow_ratio':1.0}
     # 设置因子的过滤条件
     account.qf={'valuation_pe_ttm':'valuation.pe_ttm>8,valuation.pe_ttm<40',
@@ -58,7 +58,7 @@ def initialize(account):
 
     # 设置因子的权重，负号表示因子越小越好,绝对值越大表示越重要
     account.mfactorswei = {'valuation_pe_ttm':1.0,
-    'valuation_pb': -1.0,'valuation_history_peg':-1.0,'profit_roe_ths':1.0,
+    'valuation_pb': -1.0,'valuation_history_peg':1.0,'profit_roe_ths':1.0,
     'profit_net_profit_margin_on_sales':1.0,'valuation_current_market_cap':1.0,'profit_roa':1.0,'growth_opt_profit_grow_ratio':1.0}
 
     # 股票打分机制
@@ -84,20 +84,23 @@ def handle_data(account, data):
         #将因子池化为标准的字符串格式
         for k in account.mfactors.keys():
             queryc += k.replace('_','.',1) + ','
-            qf+=account.qf[k]+','
+            #qf+=account.qf[k]+','
         queryc = queryc[:-1]
-        qf=qf[:-1]
+        #qf=qf[:-1]
         #log.info(queryc[:80])
         #log.info(queryc[80:160])
         #log.info(queryc[160:240])
         log.info('***********')
+        dat=str(get_datetime().year-2)+get_datetime().strftime('%m%d')
+        all=get_all_securities('stock',dat)
+        #log.info(len(account.iwencai_securities))
         #定义查询的内容及过滤的内容
         symb='valuation.symbol'
         q = query(
             symb,
             queryc
         ).filter(
-            valuation.symbol.in_(account.iwencai_securities),
+            valuation.symbol.in_(all.index.tolist()),
             valuation.pe_ttm>8,valuation.pe_ttm<40,profit.roe_ths>0.05,profit.net_profit_margin_on_sales>0, profit.roa>0,growth.opt_profit_grow_ratio> 0.05,valuation.current_market_cap>2500000000,valuation.history_peg>0,valuation.history_peg<10,valuation.pb>0,valuation.pb<20
         )
         #查询回测当天的满足q的数据：股票代码，各因子的值
@@ -226,7 +229,7 @@ def handle_data(account, data):
             MA20 = close.values.mean()
             # 如果五日均线大于二十日均线
             if MA5 > MA20:
-                buy.append(stk)
+                buy.append(stk) 
             if MA5 < MA20 and account.positions_value > 0:
                 sell.append(stk)
             
