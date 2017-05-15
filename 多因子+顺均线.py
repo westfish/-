@@ -1,4 +1,4 @@
-﻿#1.2
+﻿#1.4
 # 测试因子的有效性，如胜率、信息比率
 # 每期都计算一次，从而因子及打分权重可以动态调整
 import numpy as np
@@ -230,10 +230,12 @@ def handle_data(account, data):
             # 如果五日均线大于二十日均线
             if MA5 > MA20:
                 buy.append(stk) 
+            '''
             if MA5 < MA20 and account.positions_value > 0:
                 sell.append(stk)
+            '''
             
-        for stk in sell:
+        for stk in account.positions.keys():
             order_value(stk,0)
             # 记录这次买入
             log.info("买入 %s" % (stk))
